@@ -1,9 +1,9 @@
 package illager.guardillagers.client.model;
 
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.model.ModelBase;
-import net.minecraft.client.renderer.entity.model.ModelBiped;
-import net.minecraft.client.renderer.entity.model.ModelRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityArmorStand;
 
@@ -36,7 +36,7 @@ public class ModelGuardHat extends ModelBiped {
     public void render(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         this.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scale, entity);
         if (entity.isSneaking()) {
-            GlStateManager.translatef(0.0F, 0.2F, 0.0F);
+            GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
         this.Hat1.render(scale);
     }

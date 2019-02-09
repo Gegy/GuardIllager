@@ -1,7 +1,6 @@
 package illager.guardillagers.entity;
 
 import illager.guardillagers.GuardIllagers;
-import illager.guardillagers.init.IllagerEntityRegistry;
 import illager.guardillagers.init.IllagerSoundsRegister;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.*;
@@ -29,10 +28,12 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -71,7 +72,7 @@ public class EntityGuardIllager extends AbstractIllager {
     public double chasingPosZ;
 
     public EntityGuardIllager(World world) {
-        super(IllagerEntityRegistry.GUARD_ILLAGER, world);
+        super(world);
         this.setSize(0.6F, 1.95F);
         this.setDropChance(EntityEquipmentSlot.OFFHAND, 0.4F);
         ((PathNavigateGround) this.getNavigator()).setBreakDoors(true);
@@ -92,17 +93,17 @@ public class EntityGuardIllager extends AbstractIllager {
         this.targetTasks.addTask(3, new EntityAINearestAttackableTarget<>(this, EntityIronGolem.class, true));
     }
 
-    protected void registerAttributes() {
-        super.registerAttributes();
-        this.getAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue((double) 0.348F);
-        this.getAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(22.0D);
-        this.getAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(26.0D);
-        this.getAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(3.0D);
-        this.getAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(6.0D);
+    protected void applyEntityAttributes() {
+        super.applyEntityAttributes();
+        this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue((double) 0.348F);
+        this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(22.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(26.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(3.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(6.0D);
     }
 
-    protected void registerData() {
-        super.registerData();
+    protected void entityInit() {
+        super.entityInit();
         this.getDataManager().register(IS_DRINKING, false);
         this.getDataManager().register(IS_STRONG, false);
     }
@@ -123,33 +124,33 @@ public class EntityGuardIllager extends AbstractIllager {
     public void setStrong(boolean strong) {
         this.dataManager.set(IS_STRONG, strong);
         if (strong) {
-            this.getAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(30.0D);
-            this.getAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(4.0D);
+            this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(30.0D);
+            this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(4.0D);
         } else {
-            this.getAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(26.0D);
+            this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(26.0D);
         }
 
     }
 
 
-    public void writeAdditional(NBTTagCompound compound) {
-        super.writeAdditional(compound);
+    public void writeEntityToNBT(NBTTagCompound compound) {
+        super.writeEntityToNBT(compound);
         compound.setBoolean("Strong", this.isStrong());
     }
 
-    public void readAdditional(NBTTagCompound compound) {
-        super.readAdditional(compound);
+    public void readEntityFromNBT(NBTTagCompound compound) {
+        super.readEntityFromNBT(compound);
         this.setStrong(compound.getBoolean("Strong"));
     }
 
-    public void livingTick() {
+    public void onLivingUpdate() {
         if (!this.world.isRemote) {
             if (this.isDrinkingPotion()) {
                 if (this.potionUseTimer-- <= 0) {
                     this.setDrinkingPotion(false);
                     ItemStack itemstack = this.getHeldItemOffhand();
                     this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
-                    if (itemstack.getItem() == Items.POTION) {
+                    if (itemstack.getItem() == Items.POTIONITEM) {
                         List<PotionEffect> list = PotionUtils.getEffectsFromStack(itemstack);
                         if (list != null) {
                             for (PotionEffect potioneffect : list) {
@@ -158,7 +159,7 @@ public class EntityGuardIllager extends AbstractIllager {
                         }
                     }
 
-                    this.getAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).removeModifier(MODIFIER);
+                    this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).removeModifier(MODIFIER);
                 }
             } else {
                 PotionType potiontype = null;
@@ -170,26 +171,27 @@ public class EntityGuardIllager extends AbstractIllager {
                 }
 
                 if (potiontype != null) {
-                    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, PotionUtils.addPotionToItemStack(new ItemStack(Items.POTION), potiontype));
-                    this.potionUseTimer = this.getHeldItemOffhand().getUseDuration();
+                    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, PotionUtils.addPotionToItemStack(new ItemStack(Items.POTIONITEM), potiontype));
+                    this.potionUseTimer = this.getHeldItemOffhand().getMaxItemUseDuration();
                     this.setDrinkingPotion(true);
                     this.world.playSound(null, this.posX, this.posY, this.posZ, SoundEvents.ENTITY_WITCH_DRINK, this.getSoundCategory(), 1.0F, 0.8F + this.rand.nextFloat() * 0.4F);
-                    IAttributeInstance iattributeinstance = this.getAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+                    IAttributeInstance iattributeinstance = this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
                     iattributeinstance.removeModifier(MODIFIER);
                     iattributeinstance.applyModifier(MODIFIER);
                 }
             }
         }
 
-        super.livingTick();
+        super.onLivingUpdate();
     }
 
-    public void tick() {
-        super.tick();
-        this.updateCape();
+    public void onUpdate() {
+        super.onUpdate();
+        //this.updateCape();
     }
 
-    private void updateCape() {
+
+  /*  private void updateCape() {
         this.prevChasingPosX = this.chasingPosX;
         this.prevChasingPosY = this.chasingPosY;
         this.prevChasingPosZ = this.chasingPosZ;
@@ -230,14 +232,14 @@ public class EntityGuardIllager extends AbstractIllager {
         this.chasingPosX += d0 * 0.25D;
         this.chasingPosZ += d2 * 0.25D;
         this.chasingPosY += d1 * 0.25D;
-    }
+    }*/
 
     public void setRevengeTarget(@Nullable EntityLivingBase livingBase) {
         super.setRevengeTarget(livingBase);
         if (livingBase != null) {
             if (livingBase instanceof EntityPlayer) {
 
-                if (!((EntityPlayer) livingBase).isCreative() && this.isAlive()) {
+                if (!((EntityPlayer) livingBase).isCreative() && this.isEntityAlive()) {
                     this.world.setEntityState(this, (byte) 13);
                 }
             }
@@ -251,7 +253,7 @@ public class EntityGuardIllager extends AbstractIllager {
         return GuardIllagers.LOOT_TABLE;
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @SideOnly(Side.CLIENT)
     public boolean isAggressive() {
         return this.isAggressive(1);
     }
@@ -260,7 +262,7 @@ public class EntityGuardIllager extends AbstractIllager {
         this.setAggressive(1, p_190636_1_);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @SideOnly(Side.CLIENT)
     public AbstractIllager.IllagerArmPose getArmPose() {
         return this.isAggressive() ? AbstractIllager.IllagerArmPose.ATTACKING : AbstractIllager.IllagerArmPose.CROSSED;
     }
@@ -271,8 +273,8 @@ public class EntityGuardIllager extends AbstractIllager {
     }
 
     @Nullable
-    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData entityLivingData, @Nullable NBTTagCompound itemNbt) {
-        IEntityLivingData ientitylivingdata = super.onInitialSpawn(difficulty, entityLivingData, itemNbt);
+    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData entityLivingData) {
+        IEntityLivingData ientitylivingdata = super.onInitialSpawn(difficulty, entityLivingData);
         this.setEquipmentBasedOnDifficulty(difficulty);
         this.setEnchantmentBasedOnDifficulty(difficulty);
         return ientitylivingdata;
@@ -285,9 +287,18 @@ public class EntityGuardIllager extends AbstractIllager {
         this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
     }
 
+
     protected void updateAITasks() {
         super.updateAITasks();
         this.setAggressive(this.getAttackTarget() != null);
+    }
+
+    public boolean getCanSpawnHere() {
+        int i = MathHelper.floor(this.posX);
+        int j = MathHelper.floor(this.getEntityBoundingBox().minY);
+        int k = MathHelper.floor(this.posZ);
+        BlockPos blockpos = new BlockPos(i, j, k);
+        return this.world.getDifficulty() != EnumDifficulty.PEACEFUL && this.posY > 60.0D && this.posY < 90.0D && !this.world.canSeeSky(new BlockPos(this.posX, this.posY + (double) this.getEyeHeight(), this.posZ)) && this.world.getLight(blockpos) > 6 && this.getBlockPathWeight(new BlockPos(this.posX, this.getEntityBoundingBox().minY, this.posZ)) >= 0.0F;
     }
 
     /**
@@ -296,7 +307,7 @@ public class EntityGuardIllager extends AbstractIllager {
     public boolean isOnSameTeam(Entity entityIn) {
         if (super.isOnSameTeam(entityIn)) {
             return true;
-        } else if (entityIn instanceof EntityLivingBase && ((EntityLivingBase) entityIn).getCreatureAttribute() == CreatureAttribute.ILLAGER) {
+        } else if (entityIn instanceof EntityLivingBase && ((EntityLivingBase) entityIn).getCreatureAttribute() == EnumCreatureAttribute.ILLAGER) {
             return this.getTeam() == null && entityIn.getTeam() == null;
         } else {
             return false;

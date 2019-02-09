@@ -1,0 +1,17 @@
+[
+{
+  "modid": "guardillagers",
+  "name": "GuardIllagers",
+  "description": "",
+  "version": "0.1",
+  "mcversion": "1.12",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["bagu_chan"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": [],
+  "useDependencyInformation": true
+}
+]

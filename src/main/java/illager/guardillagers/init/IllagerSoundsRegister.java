@@ -1,19 +1,16 @@
 package illager.guardillagers.init;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import illager.guardillagers.GuardIllagers;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ObjectHolder;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = GuardIllagers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-@ObjectHolder(GuardIllagers.MODID)
+@Mod.EventBusSubscriber(modid = GuardIllagers.MODID)
 public class IllagerSoundsRegister {
     private static List<SoundEvent> sounds = Lists.newArrayList();
     public static final SoundEvent GUARDILLAGER_AMBIENT = create("mob.guardillager.ambient");
@@ -36,8 +33,6 @@ public class IllagerSoundsRegister {
     @SubscribeEvent
     public static void registerSounds(RegistryEvent.Register<SoundEvent> registry) {
         for (SoundEvent sound : sounds) {
-
-            Preconditions.checkNotNull(sound.getRegistryName(), "registryName");
 
             registry.getRegistry().register(sound);
 

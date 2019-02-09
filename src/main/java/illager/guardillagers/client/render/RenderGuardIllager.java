@@ -12,19 +12,19 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-@OnlyIn(Dist.CLIENT)
+@SideOnly(Side.CLIENT)
 public class RenderGuardIllager extends RenderLiving<EntityMob> {
     private static final ResourceLocation ILLAGER_TEXTURE = new ResourceLocation(GuardIllagers.MODID, "textures/entity/illager/guardillager.png");
 
     public RenderGuardIllager(RenderManager renderManagerIn) {
         super(renderManagerIn, new ModelGuardIllager(), 0.5F);
         this.addLayer(new LayerHeldItem(this) {
-            public void render(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+            public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
                 if (((EntityGuardIllager)entitylivingbaseIn).isAggressive()) {
-                    super.render(entitylivingbaseIn, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch, scale);
+                    super.doRenderLayer(entitylivingbaseIn, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch, scale);
                 }
 
             }
@@ -59,6 +59,6 @@ public class RenderGuardIllager extends RenderLiving<EntityMob> {
      */
     protected void preRenderCallback(EntityMob entitylivingbaseIn, float partialTickTime) {
         float f = 0.9375F;
-        GlStateManager.scalef(0.9375F, 0.9375F, 0.9375F);
+        GlStateManager.scale(0.9375F, 0.9375F, 0.9375F);
     }
 }

@@ -1,18 +1,17 @@
 package illager.guardillagers.client.model;
 
 import illager.guardillagers.entity.EntityGuardIllager;
-import net.minecraft.client.renderer.entity.model.ModelBase;
-import net.minecraft.client.renderer.entity.model.ModelRenderer;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.AbstractIllager;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-@OnlyIn(Dist.CLIENT)
+@SideOnly(Side.CLIENT)
 public class ModelGuardIllager extends ModelBase {
     public ModelRenderer Head;
     public ModelRenderer Nose;
@@ -162,15 +161,15 @@ public class ModelGuardIllager extends ModelBase {
             this.LeftOpenArm.rotateAngleY = this.Head.rotateAngleY - 0.4F;
             this.LeftOpenArm.rotateAngleZ = ((float) Math.PI / 2F);
         }
-
-        float f = 0.65F;
-
+        /*   float f = 0.65F;
+        
         Vec3d vec3d = (new Vec3d(entityIn.motionX, entityIn.motionY, entityIn.motionZ)).normalize();
         float f4 = 0.6F - (float) Math.pow(-vec3d.y, 1.5D);
 
         f = (f4 * 0.34906584F) + (0.65F + f4) * f;
+        */
 
-        this.Cape.rotateAngleX = f;
+        this.Cape.rotateAngleX = 0.0F;
 
 
     }
