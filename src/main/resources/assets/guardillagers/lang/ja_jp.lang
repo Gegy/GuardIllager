@@ -1,11 +1,8 @@
-{
-  //entity
-  "entity.guardillagers.guard_illager.name": "守護者のIllager",
-  //item
-  "item.guardillagers.guard_illager_egg": "守護者のIllagerのスポーンエッグ",
-  "item.guardillagers.guard_helm": "守護者のIllagerのヘルメット",
-  //sounds
-  "guardillagers:subtitles.guardillager.ambient": "守護者のIllagerがつぶやく",
-  "guardillagers:subtitles.guardillager.hurt": "守護者のIllagerがダメージを受ける",
-  "guardillagers:subtitles.guardillager.die": "守護者のIllagerが倒れる"
-}
+#entity
+entity.GuardIllager.name=守護者のIllager
+#item
+item.guard_helm.name=守護者のIllagerのヘルメット
+#sounds
+guardillagers:subtitles.guardillager.ambient=守護者のIllagerがつぶやく
+guardillagers:subtitles.guardillager.hurt=守護者のIllagerがダメージを受ける
+guardillagers:subtitles.guardillager.die=守護者のIllagerが倒れる
