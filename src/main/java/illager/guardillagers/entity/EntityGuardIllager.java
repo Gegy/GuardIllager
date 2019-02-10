@@ -273,10 +273,12 @@ public class EntityGuardIllager extends AbstractIllager {
 
     @Nullable
     public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData entityLivingData) {
-        IEntityLivingData ientitylivingdata = super.onInitialSpawn(difficulty, entityLivingData);
         this.setEquipmentBasedOnDifficulty(difficulty);
         this.setEnchantmentBasedOnDifficulty(difficulty);
-        return ientitylivingdata;
+        if (this.rand.nextInt(5) == 0) {
+            this.setStrong(true);
+        }
+        return super.onInitialSpawn(difficulty, entityLivingData);
     }
 
     /**
