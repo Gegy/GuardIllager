@@ -2,6 +2,7 @@ package illager.guardillagers.entity;
 
 import illager.guardillagers.GuardIllagers;
 import illager.guardillagers.init.IllagerSoundsRegister;
+import illager.guardillagers.utils.IllagerShieldUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.entity.*;
@@ -148,7 +149,12 @@ public class EntityGuardIllager extends AbstractIllager {
                 if (this.potionUseTimer-- <= 0) {
                     this.setDrinkingPotion(false);
                     ItemStack itemstack = this.getHeldItemOffhand();
-                    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                    if (isStrong()) {
+                        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, IllagerShieldUtils.getIllagerShield());
+                    } else {
+                        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                    }
+
                     if (itemstack.getItem() == Items.POTIONITEM) {
                         List<PotionEffect> list = PotionUtils.getEffectsFromStack(itemstack);
                         if (list != null) {
@@ -286,6 +292,9 @@ public class EntityGuardIllager extends AbstractIllager {
      */
     protected void setEquipmentBasedOnDifficulty(DifficultyInstance difficulty) {
         this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        if (isStrong()) {
+            this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, IllagerShieldUtils.getIllagerShield());
+        }
     }
 
 

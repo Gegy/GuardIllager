@@ -24,7 +24,7 @@ public class LayerHeldItemGuard implements LayerRenderer<EntityGuardIllager> {
         ItemStack itemstack = entitylivingbaseIn.getHeldItemOffhand();
         AbstractIllager.IllagerArmPose abstractillager$illagerarmpose = ((AbstractIllager) entitylivingbaseIn).getArmPose();
         if (abstractillager$illagerarmpose != AbstractIllager.IllagerArmPose.ATTACKING) {
-            if (!itemstack.isEmpty()) {
+            if (!itemstack.isEmpty() && itemstack.getItem() != Items.SHIELD) {
                 GlStateManager.color(1.0F, 1.0F, 1.0F);
                 GlStateManager.pushMatrix();
                 if (this.guardRenderer.getMainModel().isChild) {
