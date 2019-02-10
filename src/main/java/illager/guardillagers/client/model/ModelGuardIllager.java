@@ -162,7 +162,7 @@ public class ModelGuardIllager extends ModelBase {
             this.LeftOpenArm.rotateAngleZ = ((float) Math.PI / 2F);
         }
         /*   float f = 0.65F;
-        
+
         Vec3d vec3d = (new Vec3d(entityIn.motionX, entityIn.motionY, entityIn.motionZ)).normalize();
         float f4 = 0.6F - (float) Math.pow(-vec3d.y, 1.5D);
 

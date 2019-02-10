@@ -2,6 +2,8 @@ package illager.guardillagers.entity;
 
 import illager.guardillagers.GuardIllagers;
 import illager.guardillagers.init.IllagerSoundsRegister;
+import net.minecraft.block.Block;
+import net.minecraft.block.SoundType;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.*;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -10,10 +12,7 @@ import net.minecraft.entity.monster.AbstractIllager;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.init.MobEffects;
-import net.minecraft.init.PotionTypes;
-import net.minecraft.init.SoundEvents;
+import net.minecraft.init.*;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -99,7 +98,7 @@ public class EntityGuardIllager extends AbstractIllager {
         this.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).setBaseValue(22.0D);
         this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(26.0D);
         this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(3.0D);
-        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(6.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(7.0D);
     }
 
     protected void entityInit() {
@@ -331,5 +330,19 @@ public class EntityGuardIllager extends AbstractIllager {
     @Override
     protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
         return IllagerSoundsRegister.GUARDILLAGER_HURT;
+    }
+
+    protected void playStepSound(BlockPos pos, Block blockIn) {
+        SoundType soundtype = blockIn.getSoundType(world.getBlockState(pos), world, pos, this);
+
+        SoundEvent soundEvent = IllagerSoundsRegister.GUARDILLAGER_STEP;
+
+        if (this.world.getBlockState(pos.up()).getBlock() == Blocks.SNOW_LAYER) {
+            soundtype = Blocks.SNOW_LAYER.getSoundType();
+            this.playSound(soundtype.getStepSound(), soundtype.getVolume() * 0.15F, soundtype.getPitch());
+        } else if (!blockIn.getDefaultState().getMaterial().isLiquid()) {
+            this.playSound(soundtype.getStepSound(), soundtype.getVolume() * 0.15F, soundtype.getPitch());
+            this.playSound(soundEvent, 0.2F, soundtype.getPitch());
+        }
     }
 }

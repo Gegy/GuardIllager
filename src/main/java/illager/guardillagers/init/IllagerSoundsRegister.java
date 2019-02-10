@@ -17,6 +17,7 @@ public class IllagerSoundsRegister {
     public static final SoundEvent GUARDILLAGER_ANGRY = create("mob.guardillager.angry");
     public static final SoundEvent GUARDILLAGER_HURT = create("mob.guardillager.hurt");
     public static final SoundEvent GUARDILLAGER_DIE = create("mob.guardillager.die");
+    public static final SoundEvent GUARDILLAGER_STEP = create("mob.guardillager.step");
 
 
     private static SoundEvent create(String name) {
