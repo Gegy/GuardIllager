@@ -49,27 +49,8 @@ public class EntityGuardIllager extends AbstractIllager {
 
     private int potionUseTimer;
 
-    public double prevChasingPosX;
-    /**
-     * Previous Y position of the illager's cape
-     */
-    public double prevChasingPosY;
-    /**
-     * Previous Z position of the illager's cape
-     */
-    public double prevChasingPosZ;
-    /**
-     * Current X position of the illager's cape
-     */
-    public double chasingPosX;
-    /**
-     * Current Y position of the illager's cape
-     */
-    public double chasingPosY;
-    /**
-     * Current Z position of the illager's cape
-     */
-    public double chasingPosZ;
+    public double prevCapeX, prevCapeY, prevCapeZ;
+    public double capeX, capeY, capeZ;
 
     public EntityGuardIllager(World world) {
         super(world);
@@ -190,54 +171,27 @@ public class EntityGuardIllager extends AbstractIllager {
         super.onLivingUpdate();
     }
 
+    @Override
     public void onUpdate() {
         super.onUpdate();
-        //this.updateCape();
+        this.updateCape();
     }
 
 
-  /*  private void updateCape() {
-        this.prevChasingPosX = this.chasingPosX;
-        this.prevChasingPosY = this.chasingPosY;
-        this.prevChasingPosZ = this.chasingPosZ;
-        double d0 = this.posX - this.chasingPosX;
-        double d1 = this.posY - this.chasingPosY;
-        double d2 = this.posZ - this.chasingPosZ;
-        double d3 = 10.0D;
-        if (d0 > 10.0D) {
-            this.chasingPosX = this.posX;
-            this.prevChasingPosX = this.chasingPosX;
-        }
+    private void updateCape() {
+        double elasticity = 0.25;
+        double gravity = -0.1;
 
-        if (d2 > 10.0D) {
-            this.chasingPosZ = this.posZ;
-            this.prevChasingPosZ = this.chasingPosZ;
-        }
+        this.prevCapeX = this.capeX;
+        this.prevCapeY = this.capeY;
+        this.prevCapeZ = this.capeZ;
 
-        if (d1 > 10.0D) {
-            this.chasingPosY = this.posY;
-            this.prevChasingPosY = this.chasingPosY;
-        }
+        this.capeY += gravity;
 
-        if (d0 < -10.0D) {
-            this.chasingPosX = this.posX;
-            this.prevChasingPosX = this.chasingPosX;
-        }
-
-        if (d2 < -10.0D) {
-            this.chasingPosZ = this.posZ;
-            this.prevChasingPosZ = this.chasingPosZ;
-        }
-
-        if (d1 < -10.0D) {
-            this.chasingPosY = this.posY;
-            this.prevChasingPosY = this.chasingPosY;
-        }
-
-        this.chasingPosX += d0 * 0.25D;
-        this.chasingPosZ += d2 * 0.25D;
-        this.chasingPosY += d1 * 0.25D;
-    }*/
+        this.capeX += (this.posX - this.capeX) * elasticity;
+        this.capeY += (this.posY - this.capeY) * elasticity;
+        this.capeZ += (this.posZ - this.capeZ) * elasticity;
+    }
 
     public void setRevengeTarget(@Nullable EntityLivingBase livingBase) {
         super.setRevengeTarget(livingBase);

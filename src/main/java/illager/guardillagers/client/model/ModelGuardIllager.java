@@ -1,10 +1,10 @@
 package illager.guardillagers.client.model;
 
 import illager.guardillagers.entity.EntityGuardIllager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.AbstractIllager;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.math.MathHelper;
@@ -101,11 +101,14 @@ public class ModelGuardIllager extends ModelBase {
             this.RightOpenArm.render(scale);
             this.LeftOpenArm.render(scale);
         }
+
+        setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, HeadPitch,scale, entity);
     }
 
-    public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float HeadPitch, float scaleFactor, Entity entityIn) {
-        this.Head.rotateAngleY = netHeadYaw * ((float) Math.PI / 180F);
-        this.Head.rotateAngleX = HeadPitch * ((float) Math.PI / 180F);
+    @Override
+    public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
+        this.Head.rotateAngleY = (float) Math.toRadians(netHeadYaw);
+        this.Head.rotateAngleX = (float) Math.toRadians(headPitch);
         this.MiddleClosedArm.rotationPointY = 3.0F;
         this.MiddleClosedArm.rotationPointZ = -1.0F;
         this.MiddleClosedArm.rotateAngleX = -0.75F;
@@ -113,17 +116,17 @@ public class ModelGuardIllager extends ModelBase {
         this.LeftLeg.rotateAngleX = MathHelper.cos(limbSwing * 0.6662F + (float) Math.PI) * 1.4F * limbSwingAmount * 0.5F;
         this.RightLeg.rotateAngleY = 0.0F;
         this.LeftLeg.rotateAngleY = 0.0F;
-        AbstractIllager.IllagerArmPose abstractillager$illagerarmpose = ((AbstractIllager) entityIn).getArmPose();
-        EntityGuardIllager entityGuardIllager = (EntityGuardIllager) entityIn;
-        if (abstractillager$illagerarmpose == AbstractIllager.IllagerArmPose.ATTACKING) {
+        EntityGuardIllager guard = (EntityGuardIllager) entityIn;
+        AbstractIllager.IllagerArmPose armPose = guard.getArmPose();
+        if (armPose == AbstractIllager.IllagerArmPose.ATTACKING) {
             float f = MathHelper.sin(this.swingProgress * (float) Math.PI);
             float f1 = MathHelper.sin((1.0F - (1.0F - this.swingProgress) * (1.0F - this.swingProgress)) * (float) Math.PI);
             this.RightOpenArm.rotateAngleZ = 0.0F;
             this.LeftOpenArm.rotateAngleZ = 0.0F;
             this.RightOpenArm.rotateAngleY = 0.15707964F;
             this.LeftOpenArm.rotateAngleY = -0.15707964F;
-            if (((EntityLivingBase) entityIn).getPrimaryHand() == EnumHandSide.RIGHT) {
-                if (entityGuardIllager.isDrinkingPotion()) {
+            if (guard.getPrimaryHand() == EnumHandSide.RIGHT) {
+                if (guard.isDrinkingPotion()) {
                     this.RightOpenArm.rotateAngleX = -1.8849558F + MathHelper.cos(ageInTicks * 0.09F) * 0.15F;
                     this.LeftOpenArm.rotateAngleX = -1.0F;
                     this.LeftOpenArm.rotateAngleZ = -0.6F;
@@ -135,9 +138,8 @@ public class ModelGuardIllager extends ModelBase {
                     this.RightOpenArm.rotateAngleX += f * 2.2F - f1 * 0.4F;
                     this.LeftOpenArm.rotateAngleX += f * 1.2F - f1 * 0.4F;
                 }
-
             } else {
-                if (entityGuardIllager.isDrinkingPotion()) {
+                if (guard.isDrinkingPotion()) {
                     this.RightOpenArm.rotateAngleZ = 0.6F;
                     this.RightOpenArm.rotateAngleX = 1.0F;
                     this.LeftOpenArm.rotateAngleX = -1.8849558F + MathHelper.cos(ageInTicks * 0.09F) * 0.15F;
@@ -154,34 +156,37 @@ public class ModelGuardIllager extends ModelBase {
             this.LeftOpenArm.rotateAngleZ -= MathHelper.cos(ageInTicks * 0.09F) * 0.05F + 0.05F;
             this.RightOpenArm.rotateAngleX += MathHelper.sin(ageInTicks * 0.067F) * 0.05F;
             this.LeftOpenArm.rotateAngleX -= MathHelper.sin(ageInTicks * 0.067F) * 0.05F;
-        } else if (abstractillager$illagerarmpose == AbstractIllager.IllagerArmPose.BOW_AND_ARROW) {
+        } else if (armPose == AbstractIllager.IllagerArmPose.BOW_AND_ARROW) {
             this.RightOpenArm.rotateAngleY = -0.1F + this.Head.rotateAngleY;
             this.RightOpenArm.rotateAngleX = (-(float) Math.PI / 2F) + this.Head.rotateAngleX;
             this.LeftOpenArm.rotateAngleX = -0.9424779F + this.Head.rotateAngleX;
             this.LeftOpenArm.rotateAngleY = this.Head.rotateAngleY - 0.4F;
             this.LeftOpenArm.rotateAngleZ = ((float) Math.PI / 2F);
         }
-        /*   float f = 0.65F;
 
-        Vec3d vec3d = (new Vec3d(entityIn.motionX, entityIn.motionY, entityIn.motionZ)).normalize();
-        float f4 = 0.6F - (float) Math.pow(-vec3d.y, 1.5D);
+        float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
+        double capeX = guard.prevCapeX + (guard.capeX - guard.prevCapeX) * partialTicks;
+        double capeY = guard.prevCapeY + (guard.capeY - guard.prevCapeY) * partialTicks;
+        double capeZ = guard.prevCapeZ + (guard.capeZ - guard.prevCapeZ) * partialTicks;
+        double guardX = guard.prevPosX + (guard.posX - guard.prevPosX) * partialTicks;
+        double guardY = guard.prevPosY + (guard.posY - guard.prevPosY) * partialTicks;
+        double guardZ = guard.prevPosZ + (guard.posZ - guard.prevPosZ) * partialTicks;
 
-        f = (f4 * 0.34906584F) + (0.65F + f4) * f;
-        */
+        double deltaX = capeX - guardX;
+        double deltaY = guardY - capeY;
+        double deltaZ = capeZ - guardZ;
 
-        this.Cape.rotateAngleX = 0.0F;
-
-
+        double deltaXZ = MathHelper.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+        this.Cape.rotateAngleX = (float) (Math.PI / 2 - MathHelper.atan2(deltaY, deltaXZ));
     }
 
-    public ModelRenderer getArm(EnumHandSide p_191216_1_) {
-        return p_191216_1_ == EnumHandSide.LEFT ? this.LeftOpenArm : this.RightOpenArm;
+    public ModelRenderer getArm(EnumHandSide handSide) {
+        return handSide == EnumHandSide.LEFT ? this.LeftOpenArm : this.RightOpenArm;
     }
 
     public ModelRenderer crossHand() {
         return this.MiddleClosedArm;
     }
-
 
     public void setRotateAngle(ModelRenderer modelRenderer, float x, float y, float z) {
         modelRenderer.rotateAngleX = x;
