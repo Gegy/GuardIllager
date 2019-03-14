@@ -14,7 +14,7 @@ tasks.withType(Jar) {
     compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
-version = '1.12.2-1.0.0'
+version = '1.12.2-1.0.1'
 group = 'illager.guardillagers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'guardillagers'
 

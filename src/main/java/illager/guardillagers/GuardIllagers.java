@@ -24,7 +24,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 @Mod(modid = GuardIllagers.MODID, name = GuardIllagers.MODNAME, version = GuardIllagers.VERSION, useMetadata = true, dependencies = "required-after:forge@[14.23.5.2768,);")
 public class GuardIllagers {
     public static final String MODID = "guardillagers";
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.0.1";
     public static final String MODNAME = "GuardIllagers";
 
     public static final ResourceLocation LOOT_TABLE = LootTableList.register(new ResourceLocation(GuardIllagers.MODID, "entity/guard_illager"));
