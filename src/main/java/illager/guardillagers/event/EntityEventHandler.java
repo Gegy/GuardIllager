@@ -76,7 +76,7 @@ public class EntityEventHandler {
     }
 
     static {
-        SPAWN_ENEMIES.add(new Biome.SpawnListEntry(EntityGuardIllager.class, 1, 2, 4));
+        SPAWN_ENEMIES.add(new Biome.SpawnListEntry(EntityGuardIllager.class, 1, 1, 2));
     }
 
     private boolean isInMansion(ChunkProviderServer prov, World world, BlockPos pos) {

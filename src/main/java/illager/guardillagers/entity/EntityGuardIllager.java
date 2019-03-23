@@ -1,6 +1,7 @@
 package illager.guardillagers.entity;
 
 import illager.guardillagers.GuardIllagers;
+import illager.guardillagers.init.IllagerItems;
 import illager.guardillagers.init.IllagerSoundsRegister;
 import illager.guardillagers.utils.IllagerShieldUtils;
 import net.minecraft.block.Block;
@@ -69,7 +70,7 @@ public class EntityGuardIllager extends AbstractIllager {
         this.tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 3.0F, 1.0F));
         this.tasks.addTask(9, new EntityAIWatchClosest(this, EntityLiving.class, 8.0F));
         this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, AbstractIllager.class));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget<>(this, EntityPlayer.class, true));
+        this.targetTasks.addTask(2, new EntityGuardIllager.AIAttackPlayer());
         this.targetTasks.addTask(3, new EntityAINearestAttackableTarget<>(this, EntityVillager.class, true));
         this.targetTasks.addTask(3, new EntityAINearestAttackableTarget<>(this, EntityIronGolem.class, true));
     }
@@ -206,6 +207,16 @@ public class EntityGuardIllager extends AbstractIllager {
 
     }
 
+    private boolean shouldAttackPlayer(EntityLivingBase player) {
+        if (player instanceof EntityPlayer) {
+            ItemStack itemstack = ((EntityPlayer) player).inventory.armorInventory.get(3);
+
+            return itemstack.getItem() != IllagerItems.GUARD_HELMET;
+        } else {
+            return true;
+        }
+    }
+
     @Nullable
     @Override
     protected ResourceLocation getLootTable() {
@@ -262,7 +273,7 @@ public class EntityGuardIllager extends AbstractIllager {
         int j = MathHelper.floor(this.getEntityBoundingBox().minY);
         int k = MathHelper.floor(this.posZ);
         BlockPos blockpos = new BlockPos(i, j, k);
-        return this.world.getDifficulty() != EnumDifficulty.PEACEFUL && this.posY > 60.0D && this.posY < 90.0D && !this.world.canSeeSky(new BlockPos(this.posX, this.posY + (double) this.getEyeHeight(), this.posZ)) && this.world.getLight(blockpos) > 6 && this.getBlockPathWeight(new BlockPos(this.posX, this.getEntityBoundingBox().minY, this.posZ)) >= 0.0F;
+        return this.rand.nextInt(5) == 0 && this.world.getDifficulty() != EnumDifficulty.PEACEFUL && this.posY > 60.0D && this.posY < 90.0D && !this.world.canSeeSky(new BlockPos(this.posX, this.posY + (double) this.getEyeHeight(), this.posZ)) && this.world.getLight(blockpos) > 6 && this.getBlockPathWeight(new BlockPos(this.posX, this.getEntityBoundingBox().minY, this.posZ)) >= 0.0F;
     }
 
     /**
@@ -308,6 +319,35 @@ public class EntityGuardIllager extends AbstractIllager {
         } else if (!blockIn.getDefaultState().getMaterial().isLiquid()) {
             this.playSound(soundtype.getStepSound(), soundtype.getVolume() * 0.15F, soundtype.getPitch());
             this.playSound(soundEvent, 0.2F, soundtype.getPitch());
+        }
+    }
+
+    public class AIAttackPlayer extends EntityAINearestAttackableTarget<EntityPlayer> {
+        private EntityPlayer player;
+
+        public AIAttackPlayer() {
+            super(EntityGuardIllager.this, EntityPlayer.class, true);
+        }
+
+        /**
+         * Returns whether the EntityAIBase should begin execution.
+         */
+        public boolean shouldExecute() {
+            if (!EntityGuardIllager.this.shouldAttackPlayer(this.targetEntity)) {
+                return false;
+            } else {
+                if (super.shouldExecute()) {
+                    return true;
+                }
+
+                EntityGuardIllager.this.setAttackTarget(null);
+                return false;
+            }
+        }
+
+        @Override
+        public boolean shouldContinueExecuting() {
+            return EntityGuardIllager.this.shouldAttackPlayer(this.targetEntity) && super.shouldContinueExecuting();
         }
     }
 }
