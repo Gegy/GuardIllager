@@ -1,5 +1,7 @@
 package illager.guardillagers.entity;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import illager.guardillagers.GuardIllagers;
 import illager.guardillagers.init.IllagerItems;
 import illager.guardillagers.init.IllagerSoundsRegister;
@@ -207,16 +209,6 @@ public class EntityGuardIllager extends AbstractIllager {
 
     }
 
-    private boolean shouldAttackPlayer(EntityLivingBase player) {
-        if (player instanceof EntityPlayer) {
-            ItemStack itemstack = ((EntityPlayer) player).inventory.armorInventory.get(3);
-
-            return itemstack.getItem() != IllagerItems.GUARD_HELMET;
-        } else {
-            return true;
-        }
-    }
-
     @Nullable
     @Override
     protected ResourceLocation getLootTable() {
@@ -333,21 +325,28 @@ public class EntityGuardIllager extends AbstractIllager {
          * Returns whether the EntityAIBase should begin execution.
          */
         public boolean shouldExecute() {
-            if (!EntityGuardIllager.this.shouldAttackPlayer(this.targetEntity)) {
-                return false;
-            } else {
-                if (super.shouldExecute()) {
-                    return true;
-                }
+            if (super.shouldExecute()) {
+                this.targetEntity = this.taskOwner.world.getNearestAttackablePlayer(this.taskOwner.posX, this.taskOwner.posY + (double) this.taskOwner.getEyeHeight(), this.taskOwner.posZ, this.getTargetDistance(), this.getTargetDistance(), new Function<EntityPlayer, Double>() {
+                    @Nullable
+                    public Double apply(@Nullable EntityPlayer p_apply_1_) {
+                        ItemStack itemstack = p_apply_1_.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
 
-                EntityGuardIllager.this.setAttackTarget(null);
+                        if (itemstack.getItem() == IllagerItems.GUARD_HELMET) {
+                            return 0.5D;
+                        }
+
+                        return 1.0D;
+                    }
+                }, (Predicate<EntityPlayer>) this.targetEntitySelector);
+                return this.targetEntity != null;
+            } else {
                 return false;
             }
         }
 
         @Override
         public boolean shouldContinueExecuting() {
-            return EntityGuardIllager.this.shouldAttackPlayer(this.targetEntity) && super.shouldContinueExecuting();
+            return super.shouldContinueExecuting();
         }
     }
 }
