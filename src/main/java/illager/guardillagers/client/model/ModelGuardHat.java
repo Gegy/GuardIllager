@@ -35,10 +35,13 @@ public class ModelGuardHat extends ModelBiped {
     @Override
     public void render(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         this.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scale, entity);
+        GlStateManager.pushMatrix();
         if (entity.isSneaking()) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
+        GlStateManager.scale(1.05F, 1.05F, 1.05F);
         this.Hat1.render(scale);
+        GlStateManager.popMatrix();
     }
 
     public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
