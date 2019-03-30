@@ -5,6 +5,7 @@ import illager.guardillagers.GuardIllagers;
 import illager.guardillagers.entity.EntityGuardIllager;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -109,19 +110,21 @@ public class GuardSpawnHandler {
         Stream<StructureStart> intersectingStructures = structureMap.values().stream()
                 .filter(structure -> structure.getBoundingBox().intersectsWith(chunkBounds));
 
-        Stream<StructureComponent> intersectingComponents = intersectingStructures
-                .flatMap(structure -> structure.getComponents().stream())
-                .filter(component -> {
-                    StructureBoundingBox bounds = component.getBoundingBox();
-                    int chunkX = ((bounds.maxX + bounds.minX) / 2) >> 4;
-                    int chunkZ = ((bounds.maxZ + bounds.minZ) / 2) >> 4;
-                    return chunkX == event.getChunkX() && chunkZ == event.getChunkZ();
-                });
+        intersectingStructures.forEach(structure -> {
+            Stream<StructureComponent> intersectingComponents = structure.getComponents().stream()
+                    .filter(component -> {
+                        StructureBoundingBox bounds = component.getBoundingBox();
+                        int chunkX = ((bounds.maxX + bounds.minX) / 2) >> 4;
+                        int chunkZ = ((bounds.maxZ + bounds.minZ) / 2) >> 4;
+                        return chunkX == event.getChunkX() && chunkZ == event.getChunkZ();
+                    });
 
-        intersectingComponents.forEach(component -> populateComponent(world, component));
+            StructureBoundingBox structureBounds = structure.getBoundingBox();
+            intersectingComponents.forEach(component -> populateComponent(world, structureBounds, component));
+        });
     }
 
-    private static void populateComponent(World world, StructureComponent component) {
+    private static void populateComponent(World world, StructureBoundingBox structureBounds, StructureComponent component) {
         String templateName = getTemplateName(component);
         if (templateName == null) {
             return;
@@ -129,11 +132,21 @@ public class GuardSpawnHandler {
 
         Collection<SpawnEntry> spawnEntries = SPAWN_ENTRIES.get(templateName);
         for (SpawnEntry spawnEntry : spawnEntries) {
-            spawnGroup(world, component, spawnEntry);
+            spawnGroup(world, structureBounds, component, spawnEntry);
         }
     }
 
-    private static void spawnGroup(World world, StructureComponent component, SpawnEntry spawnEntry) {
+    private static void spawnGroup(World world, StructureBoundingBox structureBounds, StructureComponent component, SpawnEntry spawnEntry) {
+        BlockPos structureCenter = new BlockPos(
+                (structureBounds.maxX + structureBounds.minX) / 2,
+                (structureBounds.maxY + structureBounds.minY) / 2,
+                (structureBounds.maxZ + structureBounds.minZ) / 2
+        );
+        int structureRadius = Math.max(
+                Math.max(structureBounds.getXSize(), structureBounds.getYSize()),
+                structureBounds.getZSize()
+        ) / 2;
+
         int groupSize = world.rand.nextInt(spawnEntry.groupMax - spawnEntry.groupMin + 1) + spawnEntry.groupMin;
 
         for (int i = 0; i < groupSize; i++) {
@@ -146,6 +159,10 @@ public class GuardSpawnHandler {
             float yaw = world.rand.nextFloat() * 360.0F;
             entity.setPositionAndRotation(spawnLocation.getX() + 0.5, spawnLocation.getY(), spawnLocation.getZ() + 0.5, yaw, 0.0F);
             world.spawnEntity(entity);
+
+            if (entity instanceof EntityCreature) {
+                ((EntityCreature) entity).setHomePosAndDistance(structureCenter, structureRadius);
+            }
         }
     }
 
