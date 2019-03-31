@@ -1,17 +1,16 @@
 [
-{
-  "modid": "guardillagers",
-  "name": "GuardIllagers",
-  "description": "",
-  "version": "0.1",
-  "mcversion": "1.12",
-  "url": "",
-  "updateUrl": "",
-  "authorList": ["bagu_chan"],
-  "credits": "",
-  "logoFile": "",
-  "screenshots": [],
-  "dependencies": [],
-  "useDependencyInformation": true
-}
+  {
+    "modid": "guardillagers",
+    "name": "Guard Illagers",
+    "description": "Evil Guards that aren't afraid to show who's boss!",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://minecraft.curseforge.com/projects/guard-illagers",
+    "updateUrl": "",
+    "authorList": ["MCVinnyQ", "bagu_chan"],
+    "credits": "Gauge & Gegy",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
 ]
