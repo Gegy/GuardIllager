@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMultimap;
 import illager.guardillagers.GuardIllagers;
 import illager.guardillagers.entity.EntityGuardIllager;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.block.BlockStairs;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.util.EnumFacing;
@@ -33,6 +35,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @Mod.EventBusSubscriber(modid = GuardIllagers.MODID)
@@ -41,8 +44,10 @@ public class GuardSpawnHandler {
 
     private static final ImmutableMultimap<String, SpawnEntry> SPAWN_ENTRIES = ImmutableMultimap.of(
             "entrance", new SpawnEntry(EntityGuardIllager::new, 2, 3),
-            "1x2_c_stairs", new SpawnEntry(EntityGuardIllager::new, 2, 2),
+            "1x2_c_stairs", new SpawnEntry(EntityGuardIllager::new, 2, 2)
+                    .withFloorPredicate(state -> state.getBlock() instanceof BlockStairs),
             "1x2_d_stairs", new SpawnEntry(EntityGuardIllager::new, 2, 2)
+                    .withFloorPredicate(state -> state.getBlock() instanceof BlockStairs)
     );
 
     private static final float SPAWN_SEARCH_ATTEMPT_FACTOR = 0.1F;
@@ -175,7 +180,7 @@ public class GuardSpawnHandler {
 
         for (int i = 0; i < groupSize; i++) {
             Entity entity = spawnEntry.create(world);
-            BlockPos spawnLocation = tryFindSpawnLocationIn(world, random, entity, component.getBoundingBox());
+            BlockPos spawnLocation = tryFindSpawnLocationIn(world, random, spawnEntry, entity, component.getBoundingBox());
             if (spawnLocation == null) {
                 return;
             }
@@ -191,7 +196,7 @@ public class GuardSpawnHandler {
     }
 
     @Nullable
-    private static BlockPos tryFindSpawnLocationIn(World world, Random random, Entity entity, StructureBoundingBox bounds) {
+    private static BlockPos tryFindSpawnLocationIn(World world, Random random, SpawnEntry spawnEntry, Entity entity, StructureBoundingBox bounds) {
         int floorArea = bounds.getXSize() * bounds.getZSize();
         int attempts = MathHelper.ceil(floorArea * SPAWN_SEARCH_ATTEMPT_FACTOR);
 
@@ -204,14 +209,17 @@ public class GuardSpawnHandler {
                     continue;
                 }
 
-                BlockPos spawnPos = floor.up();
+                IBlockState state = world.getBlockState(floor);
+                if (spawnEntry.canSpawnOn(state)) {
+                    BlockPos spawnPos = floor.up();
 
-                AxisAlignedBB boundsInPlace = getEntityBoundsAt(entity, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
-                if (world.collidesWithAnyBlock(boundsInPlace)) {
-                    continue;
+                    AxisAlignedBB boundsInPlace = getEntityBoundsAt(entity, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+                    if (world.collidesWithAnyBlock(boundsInPlace)) {
+                        continue;
+                    }
+
+                    return spawnPos;
                 }
-
-                return spawnPos;
             }
         }
 
@@ -230,7 +238,7 @@ public class GuardSpawnHandler {
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos(pos);
         while (mutablePos.getY() > minY) {
             mutablePos.move(EnumFacing.DOWN);
-            if (world.isSideSolid(mutablePos, EnumFacing.UP)) {
+            if (world.getBlockState(mutablePos).getCollisionBoundingBox(world, mutablePos) != null) {
                 return mutablePos.toImmutable();
             }
         }
@@ -262,10 +270,21 @@ public class GuardSpawnHandler {
         private final int groupMin;
         private final int groupMax;
 
+        private Predicate<IBlockState> floorPredicate = state -> true;
+
         private SpawnEntry(Function<World, Entity> constructor, int groupMin, int groupMax) {
             this.constructor = constructor;
             this.groupMin = groupMin;
             this.groupMax = groupMax;
+        }
+
+        public SpawnEntry withFloorPredicate(Predicate<IBlockState> predicate) {
+            this.floorPredicate = predicate;
+            return this;
+        }
+
+        public boolean canSpawnOn(IBlockState state) {
+            return this.floorPredicate.test(state);
         }
 
         public Entity create(World world) {
