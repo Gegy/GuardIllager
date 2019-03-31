@@ -9,9 +9,11 @@ import net.minecraft.entity.EntityCreature;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.ChunkGeneratorOverworld;
 import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraft.world.gen.structure.MapGenStructure;
@@ -39,8 +41,8 @@ public class GuardSpawnHandler {
 
     private static final ImmutableMultimap<String, SpawnEntry> SPAWN_ENTRIES = ImmutableMultimap.of(
             "entrance", new SpawnEntry(EntityGuardIllager::new, 2, 3),
-            "1x2_c_stairs", new SpawnEntry(EntityGuardIllager::new, 1, 1),
-            "1x2_d_stairs", new SpawnEntry(EntityGuardIllager::new, 1, 1)
+            "1x2_c_stairs", new SpawnEntry(EntityGuardIllager::new, 2, 2),
+            "1x2_d_stairs", new SpawnEntry(EntityGuardIllager::new, 2, 2)
     );
 
     private static final float SPAWN_SEARCH_ATTEMPT_FACTOR = 0.1F;
@@ -103,25 +105,44 @@ public class GuardSpawnHandler {
             return;
         }
 
-        int minChunkX = event.getChunkX() << 4;
-        int minChunkZ = event.getChunkZ() << 4;
-        StructureBoundingBox chunkBounds = new StructureBoundingBox(minChunkX, minChunkZ, minChunkX + 15, minChunkZ + 15);
+        ChunkPos chunkPos = new ChunkPos(event.getChunkX(), event.getChunkZ());
+        StructureBoundingBox chunkBounds = new StructureBoundingBox(chunkPos.getXStart(), chunkPos.getZStart(), chunkPos.getXEnd(), chunkPos.getZEnd());
 
         Stream<StructureStart> intersectingStructures = structureMap.values().stream()
                 .filter(structure -> structure.getBoundingBox().intersectsWith(chunkBounds));
 
         intersectingStructures.forEach(structure -> {
             Stream<StructureComponent> intersectingComponents = structure.getComponents().stream()
-                    .filter(component -> {
-                        StructureBoundingBox bounds = component.getBoundingBox();
-                        int chunkX = ((bounds.maxX + bounds.minX) / 2) >> 4;
-                        int chunkZ = ((bounds.maxZ + bounds.minZ) / 2) >> 4;
-                        return chunkX == event.getChunkX() && chunkZ == event.getChunkZ();
-                    });
+                    .filter(component -> component.getBoundingBox().intersectsWith(chunkBounds))
+                    .filter(component -> isComponentFullyGenerated(world, component));
 
             StructureBoundingBox structureBounds = structure.getBoundingBox();
             intersectingComponents.forEach(component -> populateComponent(world, structureBounds, component));
         });
+    }
+
+    private static boolean isComponentFullyGenerated(World world, StructureComponent component) {
+        StructureBoundingBox boundingBox = component.getBoundingBox();
+        ChunkPos minChunkPos = chunkFromBlock(boundingBox.minX, boundingBox.minZ);
+        ChunkPos maxChunkPos = chunkFromBlock(boundingBox.maxX, boundingBox.maxZ);
+        for (int chunkZ = minChunkPos.z; chunkZ <= maxChunkPos.z; chunkZ++) {
+            for (int chunkX = minChunkPos.x; chunkX <= maxChunkPos.x; chunkX++) {
+                if (!isChunkPopulated(world, chunkX, chunkZ)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isChunkPopulated(World world, int chunkX, int chunkZ) {
+        BlockPos pos = new BlockPos(chunkX << 4, 0, chunkZ << 4);
+        if (!world.isBlockLoaded(pos)) {
+            return false;
+        }
+
+        Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
+        return chunk.isTerrainPopulated();
     }
 
     private static void populateComponent(World world, StructureBoundingBox structureBounds, StructureComponent component) {
@@ -130,13 +151,16 @@ public class GuardSpawnHandler {
             return;
         }
 
+        long seed = world.getSeed() ^ hash(structureBounds);
+        Random random = new Random(seed);
+
         Collection<SpawnEntry> spawnEntries = SPAWN_ENTRIES.get(templateName);
         for (SpawnEntry spawnEntry : spawnEntries) {
-            spawnGroup(world, structureBounds, component, spawnEntry);
+            spawnGroup(world, random, structureBounds, component, spawnEntry);
         }
     }
 
-    private static void spawnGroup(World world, StructureBoundingBox structureBounds, StructureComponent component, SpawnEntry spawnEntry) {
+    private static void spawnGroup(World world, Random random, StructureBoundingBox structureBounds, StructureComponent component, SpawnEntry spawnEntry) {
         BlockPos structureCenter = new BlockPos(
                 (structureBounds.maxX + structureBounds.minX) / 2,
                 (structureBounds.maxY + structureBounds.minY) / 2,
@@ -147,16 +171,16 @@ public class GuardSpawnHandler {
                 structureBounds.getZSize()
         ) / 2;
 
-        int groupSize = world.rand.nextInt(spawnEntry.groupMax - spawnEntry.groupMin + 1) + spawnEntry.groupMin;
+        int groupSize = random.nextInt(spawnEntry.groupMax - spawnEntry.groupMin + 1) + spawnEntry.groupMin;
 
         for (int i = 0; i < groupSize; i++) {
             Entity entity = spawnEntry.create(world);
-            BlockPos spawnLocation = tryFindSpawnLocationIn(world, entity, component.getBoundingBox());
+            BlockPos spawnLocation = tryFindSpawnLocationIn(world, random, entity, component.getBoundingBox());
             if (spawnLocation == null) {
                 return;
             }
 
-            float yaw = world.rand.nextFloat() * 360.0F;
+            float yaw = random.nextFloat() * 360.0F;
             entity.setPositionAndRotation(spawnLocation.getX() + 0.5, spawnLocation.getY(), spawnLocation.getZ() + 0.5, yaw, 0.0F);
             world.spawnEntity(entity);
 
@@ -167,15 +191,15 @@ public class GuardSpawnHandler {
     }
 
     @Nullable
-    private static BlockPos tryFindSpawnLocationIn(World world, Entity entity, StructureBoundingBox bounds) {
+    private static BlockPos tryFindSpawnLocationIn(World world, Random random, Entity entity, StructureBoundingBox bounds) {
         int floorArea = bounds.getXSize() * bounds.getZSize();
         int attempts = MathHelper.ceil(floorArea * SPAWN_SEARCH_ATTEMPT_FACTOR);
 
         for (int i = 0; i < attempts; i++) {
-            BlockPos pos = randomPositionIn(bounds, world.rand);
+            BlockPos pos = randomPositionIn(bounds, random);
 
             if (world.isAirBlock(pos)) {
-                BlockPos floor = findFloor(world, pos, bounds.getYSize());
+                BlockPos floor = findFloor(world, pos, bounds.minY);
                 if (floor == null) {
                     continue;
                 }
@@ -183,7 +207,7 @@ public class GuardSpawnHandler {
                 BlockPos spawnPos = floor.up();
 
                 AxisAlignedBB boundsInPlace = getEntityBoundsAt(entity, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
-                if (world.collidesWithAnyBlock(boundsInPlace.shrink(0.1))) {
+                if (world.collidesWithAnyBlock(boundsInPlace)) {
                     continue;
                 }
 
@@ -202,9 +226,7 @@ public class GuardSpawnHandler {
     }
 
     @Nullable
-    private static BlockPos findFloor(World world, BlockPos pos, int depth) {
-        int minY = pos.getY() - depth;
-
+    private static BlockPos findFloor(World world, BlockPos pos, int minY) {
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos(pos);
         while (mutablePos.getY() > minY) {
             mutablePos.move(EnumFacing.DOWN);
@@ -222,6 +244,16 @@ public class GuardSpawnHandler {
                 bounds.minY + random.nextInt(bounds.getYSize()),
                 bounds.minZ + random.nextInt(bounds.getZSize())
         );
+    }
+
+    private static ChunkPos chunkFromBlock(int x, int z) {
+        return new ChunkPos(x >> 4, z >> 4);
+    }
+
+    private static long hash(StructureBoundingBox bounds) {
+        long min = (bounds.minY + bounds.minZ * 31) * 31 + bounds.minX;
+        long max = (bounds.maxY + bounds.maxZ * 31) * 31 + bounds.maxX;
+        return min * 31 + max;
     }
 
     private static class SpawnEntry {
